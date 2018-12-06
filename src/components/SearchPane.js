@@ -5,6 +5,7 @@ import incidentTypes from "../utilities/incidents";
 
 const containerStyle = {
   textAlign: "left"
+  // height: "100%"
 };
 
 const createCheckBox = label => ({
@@ -92,9 +93,10 @@ class SearchPane extends React.Component {
         <br />
         {incidentTypes.map(item => (
           <>
-            <label key={item.id}>
+            <label key={"label_" + item.id}>
               <Checkbox
                 name={item.id}
+                key={"checkbox_" + item.id}
                 checked={this.state.checkedItems.get(item.id)}
                 onChange={this.handleCheckboxChange}
               />
@@ -103,7 +105,9 @@ class SearchPane extends React.Component {
             <br />
           </>
         ))}
-        <button onClick={this.searchClick}>Search</button>
+        <button className="btn btn-primary" onClick={this.searchClick}>
+          Search
+        </button>
       </div>
     );
   }

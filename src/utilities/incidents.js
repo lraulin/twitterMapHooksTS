@@ -87,4 +87,7 @@ const incidentTypes = [
   )
 ];
 
+export const incidentDictionary = {};
+incidentTypes.forEach(x => (incidentDictionary[x.id] = x));
+
 export default incidentTypes;

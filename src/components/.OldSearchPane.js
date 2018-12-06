@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import blue_marker from "../images/blue_marker.png";
 import red_marker from "../images/red_marker.png";
-import CheckboxContainer from "./CheckboxContainer";
+import CheckboxContainer from "./SearchPane";
 
 const containerStyle = {
   textAlign: "left"
@@ -45,13 +45,17 @@ class SearchPane extends Component {
     this.setState({ allSelected: trueOrFalse });
   }
 
+  clickSearch() {
+    const selections = 
+  }
+
   componentDidMount() {}
 
   render() {
     return (
       <div id="search-pane-container" style={containerStyle}>
         <div className="form-group" id="categories">
-          <label className="section-title">Data Source</label>
+          {/* <label className="section-title">Data Source</label>
           <br />
           <label className="data-type">
             <input type="checkbox" checked id="twitterCkBx" /> Twitter
@@ -64,7 +68,7 @@ class SearchPane extends Component {
             <img className="icon-img" src={red_marker} alt="Red marker" />
           </label>
           <label className="section-title">Incident Type</label>
-          <br />
+          <br /> */}
           {/* INCIDENT SELECTION */}
           <CheckboxContainer />
           <div className="form-group">
@@ -98,9 +102,10 @@ class SearchPane extends Component {
               className="input-group form-control"
             />
             <button
-              type="submit"
+              type="button"
               className="btn btn-primary btn-sm"
               id="search-button"
+              onClick={this.clickSearch}
             >
               Search
             </button>
