@@ -102,7 +102,7 @@ class SearchPane extends React.Component {
               />
               {item.displayName}
             </label>
-            <br />
+            <br key={"br_" + item.id} />
           </>
         ))}
         <button className="btn btn-primary" onClick={this.searchClick}>
