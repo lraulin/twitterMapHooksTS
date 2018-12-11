@@ -27,19 +27,23 @@ class AppContainer extends Component {
         res => res.reduce((a, c) => a.concat(c["statuses"]), []),
         err => console.log(err)
       )
+      .catch(e => console.log(e))
       .then(res => {
         // set lat/lng for tweets with no location data
         const promises = res.map(tweet => this.getLatLong(tweet));
         return Promise.all(promises);
       })
+      .catch(e => console.log(e))
       .then(res => {
         // toss out any that still don't have location
-        res = res.filter(
-          tweet =>
-            !!tweet &&
-            tweet.coordinates !== null &&
-            tweet.coordinates !== undefined
-        );
+        res = res
+          .filter(
+            tweet =>
+              !!tweet &&
+              tweet.coordinates !== null &&
+              tweet.coordinates !== undefined
+          )
+          .catch(e => console.log(e));
 
         // store in hash map to prevent duplicates
         // TODO: reconsider order...dedupe before fetching lat/long
@@ -47,7 +51,8 @@ class AppContainer extends Component {
         res.forEach(x => tweets.set(x.id_str, x));
 
         this.setState({ tweets });
-      });
+      })
+      .catch(e => console.log(e));
   }
 
   searchTwitter(twitter, queryString) {
