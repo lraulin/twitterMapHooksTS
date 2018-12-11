@@ -34,9 +34,9 @@ class SearchPane extends React.Component {
 
     // Toggle all the other checkboxes
     const checkedItems = this.state.checkedItems;
-    for (let [key, _] of checkedItems) {
-      checkedItems.set(key, onOrOff);
-    }
+    Array.from(checkedItems.keys()).forEach(key =>
+      checkedItems.set(key, onOrOff)
+    );
     this.setState(checkedItems);
   }
 

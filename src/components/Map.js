@@ -3,15 +3,19 @@ import React, { Component } from "react";
 import GoogleMapReact from "google-map-react";
 import secrets from "../secrets";
 import _ from "lodash";
+import Marker from "./Marker";
 
-const markerIcon = require("../images/map_marker_blue.svg");
-const markerStyle = {
-  backgroundImage: { markerIcon }
-};
+import markerIcon from "../images/noun_Map Marker_16968.svg";
 
-const Marker = ({ text, ...props }) => (
-  <div className="marker" style={markerStyle} />
-);
+// const markerStyle = {
+//   backgroundImage: { markerIcon }
+// };
+
+// const Marker = ({ text, ...props }) => (
+//   <div className="marker" style={markerStyle}>
+//     {text}
+//   </div>
+// );
 
 class Map extends Component {
   static defaultProps = {
@@ -23,43 +27,21 @@ class Map extends Component {
   };
 
   render() {
-    console.log("rendering map");
     const markers = () => {
-      console.log("generating markers");
       if (this.props.tweets) {
+        const tweets = Array.from(this.props.tweets.values());
         try {
-          return this.props.tweets.map(tweet => {
+          return tweets.map(tweet => {
             if (tweet.coordinates) {
-              console.log(
-                `${tweet.coordinates.Latitude}, ${tweet.coordinates.Longitude}`
-              );
               return (
                 <Marker
+                  key={"tweetId_" + tweet.id_str}
                   text="TWEET"
                   lat={tweet.coordinates.Latitude}
                   lng={tweet.coordinates.Longitude}
+                  icon={{ url: markerIcon }}
                 />
               );
-            } else {
-              console.log("no coordinates");
-              return null;
-            }
-          });
-        } catch (e) {
-          console.log(e);
-        }
-      }
-    };
-    const markers2 = () => {
-      console.log("generating markers");
-      if (this.props.tweets) {
-        try {
-          this.props.tweets.map(tweet => {
-            if (tweet.coordinates) {
-              console.log(
-                `${tweet.coordinates.Latitude}, ${tweet.coordinates.Longitude}`
-              );
-              return <h1>I CAN SEE IT</h1>;
             } else {
               console.log("no coordinates");
               return null;
@@ -73,14 +55,12 @@ class Map extends Component {
 
     return (
       <div>
-        {markers2()}
         <div style={{ height: "100vh", width: "100%" }}>
           <GoogleMapReact
             bootstrapURLKeys={{ key: secrets.googleMapsApiKey }}
             defaultCenter={this.props.center}
             defaultZoom={this.props.zoom}
           >
-            <Marker text="HEY!" lat="0" lng="0" />
             {markers()}
           </GoogleMapReact>
         </div>
