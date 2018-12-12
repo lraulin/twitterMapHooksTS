@@ -4,12 +4,14 @@ import App from "./App";
 import Twitter from "twitter-node-client";
 import secrets from "../secrets";
 import { incidentDictionary } from "../utilities/incidents";
-import _ from "lodash";
 import axios from "axios";
+import incidentTypes from "../utilities/incidents";
+
+const JSON_SERVER_URL = "http://localhost:3001/tweets";
 
 class AppContainer extends Component {
   state = {
-    tweets: new Map()
+    tweets: {}
   };
 
   fetchTweets = this.fetchTweets.bind(this);
@@ -36,20 +38,18 @@ class AppContainer extends Component {
       .catch(e => console.log(e))
       .then(res => {
         // toss out any that still don't have location
-        res = res
-          .filter(
-            tweet =>
-              !!tweet &&
-              tweet.coordinates !== null &&
-              tweet.coordinates !== undefined
-          )
-          .catch(e => console.log(e));
+        res = res.filter(
+          tweet =>
+            !!tweet &&
+            tweet.coordinates !== null &&
+            tweet.coordinates !== undefined
+        );
 
-        // store in hash map to prevent duplicates
+        // store in object to prevent duplicates
         // TODO: reconsider order...dedupe before fetching lat/long
-        const tweets = new Map();
-        res.forEach(x => tweets.set(x.id_str, x));
-
+        const tweets = {};
+        res.forEach(tweet => (tweets[tweet.id_str] = tweet));
+        this.saveData(tweets);
         this.setState({ tweets });
       })
       .catch(e => console.log(e));
@@ -88,6 +88,25 @@ class AppContainer extends Component {
           console.log("Unfound Location " + tweet.user.location);
         });
     }
+  }
+
+  saveData(data) {
+    // save data to mock database and return promise
+    axios.post(JSON_SERVER_URL, data);
+  }
+
+  loadData() {
+    // load data from mock database and return promise
+    return axios.get(JSON_SERVER_URL).then(res => {
+      const tweets = res.data;
+      this.setState({ tweets });
+    });
+  }
+
+  componentDidMount() {
+    this.loadData();
+    const types = incidentTypes.map(incidentType => incidentType.id);
+    this.fetchTweets(types);
   }
 
   render() {

@@ -20,7 +20,7 @@ const App = ({ tweets, fetchTweets, ...props }) => {
             <Map tweets={tweets} />
           </div>
           <div className="col-sm-3">
-            <TweetPane />
+            <TweetPane tweets={tweets} />
           </div>
         </div>
       </div>

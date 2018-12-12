@@ -2,6 +2,7 @@ import React from "react";
 import Checkbox from "./Checkbox";
 import camelCase from "../utilities/camelCase";
 import incidentTypes from "../utilities/incidents";
+import Calendar from "./Calendar";
 
 const containerStyle = {
   textAlign: "left"
@@ -14,18 +15,19 @@ const createCheckBox = label => ({
   label
 });
 
-// Generate an array of checkbox objects
-const checkboxes = incidentTypes.map(type => createCheckBox(type.id));
-
 class SearchPane extends React.Component {
   state = {
     allSelected: false,
-    checkedItems: new Map()
+    checkedItems: new Map(),
+    startDate: null,
+    endDate: null,
+    searchText: ""
   };
 
   handleCheckboxChange = this.handleCheckboxChange.bind(this);
   toggleAll = this.toggleAll.bind(this);
   searchClick = this.searchClick.bind(this);
+  handleChangeDate = this.handleChangeDate.bind(this);
 
   toggleAll(e) {
     // Toggle "All" checkbox
@@ -47,6 +49,7 @@ class SearchPane extends React.Component {
         [...this.state.checkedItems].filter(([key, value]) => value === true)
       ).keys()
     ];
+    // search for tweets with Twitter API
     this.props.fetchTweets(selectedTypes);
   }
 
@@ -62,6 +65,13 @@ class SearchPane extends React.Component {
     if (this.state.allSelected) {
       this.setState({ allSelected: false });
     }
+  }
+
+  handleChangeDate([startDate, endDate]) {
+    this.setState({
+      startDate,
+      endDate
+    });
   }
 
   componentDidUpdate() {
@@ -105,6 +115,20 @@ class SearchPane extends React.Component {
             <br key={"br_" + item.id} />
           </>
         ))}
+        <Calendar
+          handleChangeDate={this.handleChangeDate}
+          startDate={this.state.startDate}
+          endDate={this.state.endDate}
+        />
+        <br />
+        <label htmlFor="text">Filter by Keywords</label>
+        <input
+          type="text"
+          name="text"
+          value={this.state.searchText}
+          onChange={e => this.setState({ searchText: e.target.value })}
+        />
+        <br />
         <button className="btn btn-primary" onClick={this.searchClick}>
           Search
         </button>
