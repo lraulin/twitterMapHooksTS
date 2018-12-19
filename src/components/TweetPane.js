@@ -1,26 +1,31 @@
 import React, { Component } from "react";
 import Tweet from "react-tweet";
 import { className } from "postcss-selector-parser";
+import ReactScrollbar from "react-scrollbar";
+import isTweet from "../utilities/isTweet";
 
-class TweetPane extends Component {
-  render() {
-    const linkProps = { target: "_blank", rel: "noreferrer" };
-    const tweets = Object.values(this.props.tweets);
+const myScrollbar = {
+  // width: 400,
+  height: 850
+};
 
-    return (
-      <div id="tweetContainer">
-        {tweets &&
-          tweets.map(tweet => (
-            <Tweet
-              className={className}
-              data={tweet}
-              linkProps={linkProps}
-              key={tweet.id_str}
-            />
-          ))}
-      </div>
-    );
-  }
-}
+const TweetPane = ({ filteredTweets, ...props }) => {
+  return (
+    <ReactScrollbar style={myScrollbar}>
+      {!!filteredTweets.length &&
+        filteredTweets.map(
+          tweet =>
+            isTweet(tweet) && (
+              <Tweet
+                className={className}
+                data={tweet}
+                linkProps={{ target: "_blank", rel: "noreferrer" }}
+                key={tweet.id_str}
+              />
+            )
+        )}
+    </ReactScrollbar>
+  );
+};
 
 export default TweetPane;

@@ -6,15 +6,21 @@ import secrets from "../secrets";
 import { incidentDictionary } from "../utilities/incidents";
 import axios from "axios";
 import incidentTypes from "../utilities/incidents";
+import _ from "lodash";
+import isTweet from "../utilities/isTweet";
 
-const JSON_SERVER_URL = "http://localhost:3001/tweets";
+// REST API url for mock database
+const JSON_SERVER_URL = "http://localhost:3001/posts";
 
 class AppContainer extends Component {
   state = {
-    tweets: {}
+    tweets: {},
+    filteredTweets: []
   };
 
   fetchTweets = this.fetchTweets.bind(this);
+  applyFilter = this.applyFilter.bind(this);
+  applyCategories = this.applyCategories.bind(this);
 
   fetchTweets(types) {
     // Get all Tweets asyncronously
@@ -90,27 +96,97 @@ class AppContainer extends Component {
     }
   }
 
+  applyFilter({ incidentTypes, startDate, endDate, text }) {
+    let filteredTweets = Object.values(this.state.tweets);
+    const initialCount = filteredTweets.length;
+
+    if (startDate) {
+      _.remove(
+        filteredTweets,
+        t =>
+          new Date(t.created_at) < startDate || new Date(t.created_at) > endDate
+      );
+    }
+
+    if (text) {
+      const words = text.split(" ");
+      _.remove(
+        filteredTweets,
+        tweet => !words.some(word => tweet.text.includes(word))
+      );
+    }
+
+    _.remove(filteredTweets, t => !incidentTypes.includes(t.incidentType));
+
+    const finalCount = filteredTweets.length;
+    console.log(`${finalCount} of ${initialCount} Tweets match filter`);
+    this.setState({ filteredTweets });
+  }
+
+  applyCategories(tweets) {
+    Object.values(tweets).forEach(tweet => {
+      if (tweet.incidentTypes) {
+        delete tweet.incidentTypes;
+      }
+      Object.entries(incidentDictionary).forEach(([key, value]) => {
+        if (value.regex.test(tweet.text)) {
+          tweet.incidentType = key;
+        }
+      });
+    });
+  }
+
   saveData(data) {
     // save data to mock database and return promise
-    axios.post(JSON_SERVER_URL, data);
+    if (Object.keys(data).length) {
+      axios.post(JSON_SERVER_URL, data);
+    }
   }
 
   loadData() {
     // load data from mock database and return promise
     return axios.get(JSON_SERVER_URL).then(res => {
-      const tweets = res.data;
-      this.setState({ tweets });
+      if (res.data) {
+        this.applyCategories(res.data);
+        this.setState(
+          {
+            tweets: res.data,
+            filteredTweets: Object.values(res.data)
+          },
+          rej => console.log(rej)
+        );
+      } else {
+        console.log("data could not be retrieved");
+      }
     });
   }
 
   componentDidMount() {
     this.loadData();
-    const types = incidentTypes.map(incidentType => incidentType.id);
-    this.fetchTweets(types);
+    let sqlStrs = [];
+    Object.entries(incidentDictionary).forEach(([key, value]) => {
+      const sql = [];
+      sql.push(key);
+      sql.push(value.displayName);
+      sql.push(value.searchString);
+      sql.push(value.crisisType);
+      sql.push(value.regex);
+      let sqlStr = `("` + sql.join(`", "`) + `")`;
+      sqlStrs.push(sqlStr);
+    });
+    //const types = incidentTypes.map(incidentType => incidentType.id);
+    //this.fetchTweets(types);
   }
 
   render() {
-    return <App tweets={this.state.tweets} fetchTweets={this.fetchTweets} />;
+    return (
+      <App
+        tweets={this.state.tweets}
+        filteredTweets={this.state.filteredTweets}
+        fetchTweets={this.fetchTweets}
+        applyFilter={this.applyFilter}
+      />
+    );
   }
 }
 

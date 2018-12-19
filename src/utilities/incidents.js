@@ -2,8 +2,25 @@ const createIncidentType = (id, displayName, searchString, crisisType) => ({
   id,
   displayName,
   searchString,
-  crisisType
+  crisisType,
+  regex: reify(searchString)
 });
+
+function reify(str) {
+  str = str
+    .toLowerCase()
+    .replace(/%26 |\(|\)/g, "")
+    .split("|")
+    .map(str =>
+      str
+        .split(" ")
+        .map(word => "(?=.*" + word + ")")
+        .join("")
+    )
+    .join("|");
+  str = "^" + str + ".*$";
+  return new RegExp(str, "i");
+}
 
 const incidentTypes = [
   createIncidentType(

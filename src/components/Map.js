@@ -1,59 +1,80 @@
-/* eslint-disable no-unused-expressions */
 import React, { Component } from "react";
-import GoogleMapReact from "google-map-react";
 import secrets from "../secrets";
-import Marker from "./Marker";
-
-import markerIcon from "../images/noun_Map Marker_16968.svg";
+import MarkerClusterer from "@google/markerclusterer";
 
 class Map extends Component {
-  static defaultProps = {
-    center: {
-      lat: 39.0997,
-      lng: -94.5786
-    },
-    zoom: 4
-  };
+  constructor(props) {
+    super(props);
+    this.onScriptLoad = this.onScriptLoad.bind(this);
+  }
+
+  onScriptLoad() {
+    const map = new window.google.maps.Map(
+      document.getElementById(this.props.id),
+      this.props.options
+    );
+    this.props.onMapLoad(map);
+
+    // Create an array of alphabetical characters used to label the markers.
+    var labels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    const locations = this.props.filteredTweets.length
+      ? this.props.filteredTweets.map(tweet => ({
+          lat: tweet.coordinates.Latitude,
+          lng: tweet.coordinates.Longitude
+        }))
+      : [];
+
+    // Add some markers to the map.
+    var markers = locations.map(function(location, i) {
+      return new window.google.maps.Marker({
+        position: location,
+        label: labels[i % labels.length]
+      });
+    });
+
+    // Add a marker clusterer to manage the markers.
+    var markerCluster = new MarkerClusterer(map, markers, {
+      imagePath:
+        "https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m"
+    });
+  }
+
+  renderMap() {
+    if (!window.google) {
+      var s = document.createElement("script");
+      s.type = "text/javascript";
+      s.src = `https://maps.google.com/maps/api/js?key=${
+        secrets.googleMapsApiKey
+      }`;
+      var x = document.getElementsByTagName("script")[0];
+      x.parentNode.insertBefore(s, x);
+      // Below is important.
+      //We cannot access google.maps until it's finished loading
+      s.addEventListener("load", e => {
+        this.onScriptLoad();
+      });
+    } else {
+      this.onScriptLoad();
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    console.log("Map did update");
+    console.log(this.props.filteredTweets);
+    if (this.props.filteredTweets !== prevProps.filteredTweets) {
+      this.renderMap();
+    }
+  }
+
+  componentDidMount() {
+    console.log("Map mounted");
+    this.renderMap();
+  }
 
   render() {
-    const markers = () => {
-      if (this.props.tweets) {
-        const tweets = Object.values(this.props.tweets);
-        try {
-          return tweets.map(tweet => {
-            if (tweet.coordinates) {
-              return (
-                <Marker
-                  key={"tweetId_" + tweet.id_str}
-                  text="TWEET"
-                  lat={tweet.coordinates.Latitude}
-                  lng={tweet.coordinates.Longitude}
-                  icon={{ url: markerIcon }}
-                />
-              );
-            } else {
-              console.log("no coordinates");
-              return null;
-            }
-          });
-        } catch (e) {
-          console.log(e);
-        }
-      }
-    };
-
     return (
-      <div>
-        <div style={{ height: "100vh", width: "100%" }}>
-          <GoogleMapReact
-            bootstrapURLKeys={{ key: secrets.googleMapsApiKey }}
-            defaultCenter={this.props.center}
-            defaultZoom={this.props.zoom}
-          >
-            {markers()}
-          </GoogleMapReact>
-        </div>
-      </div>
+      <div style={{ height: "100vh", width: "100%" }} id={this.props.id} />
     );
   }
 }
