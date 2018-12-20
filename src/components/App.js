@@ -3,6 +3,7 @@ import Map from "./Map";
 import SearchPane from "./SearchPane";
 import TweetPane from "./TweetPane";
 import PropTypes from "prop-types";
+import { fil } from "date-fns/esm/locale";
 
 const style = {
   // display: "block"
@@ -23,22 +24,7 @@ const App = ({
             <SearchPane fetchTweets={fetchTweets} applyFilter={applyFilter} />
           </div>
           <div className="col-sm-7">
-            {/* <Map filteredTweets={filteredTweets} /> */}
-            <Map
-              filteredTweets={filteredTweets}
-              id="myMap"
-              options={{
-                center: { lat: 41.0082, lng: 28.9784 },
-                zoom: 8
-              }}
-              onMapLoad={map => {
-                var marker = new window.google.maps.Marker({
-                  position: { lat: 41.0082, lng: 28.9784 },
-                  map: map,
-                  title: "Hello Istanbul!"
-                });
-              }}
-            />
+            <Map filteredTweets={filteredTweets} />
             );
           </div>
           <div className="col-sm-3">

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@babel/runtime": "7.0.0-beta.55",
     "@google/markerclusterer": "^1.0.3",
     "@wojtekmaj/react-daterange-picker": "^2.0.0",
     "axios": "^0.18.0",
@@ -11,6 +12,7 @@
     "geocoder": "^0.2.3",
     "google-map-react": "^1.1.1",
     "lodash": "^4.17.11",
+    "material-ui": "1.0.0-beta.47",
     "node-sass": "^4.11.0",
     "node-where": "^1.1.0",
     "pg": "^7.7.1",
@@ -46,5 +48,6 @@
     "not ie <= 11",
     "not op_mini all"
   ],
-  "proxy": "http://localhost:4000"
+  "proxy": "http://localhost:4000",
+  "devDependencies": {}
 }

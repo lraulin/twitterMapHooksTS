@@ -1,46 +1,87 @@
 import React, { Component } from "react";
+import { render } from "react-dom";
 import secrets from "../secrets";
 import MarkerClusterer from "@google/markerclusterer";
+import InfoWindow from "./InfoWindow";
+
+const geographicCenterOfUSA = {
+  lat: 39.8283,
+  lng: -98.5795
+};
 
 class Map extends Component {
-  constructor(props) {
-    super(props);
-    this.onScriptLoad = this.onScriptLoad.bind(this);
-  }
+  state = {
+    id: "myMap",
+    options: {
+      center: geographicCenterOfUSA,
+      zoom: 4
+    },
+    map: null
+  };
+  markers = [];
+  markerCluster = null;
+  onScriptLoad = this.onScriptLoad.bind(this);
+  setMarkers = this.setMarkers.bind(this);
+  lastInfoWindow = null;
 
   onScriptLoad() {
     const map = new window.google.maps.Map(
-      document.getElementById(this.props.id),
-      this.props.options
+      document.getElementById(this.state.id),
+      this.state.options
     );
-    this.props.onMapLoad(map);
+    this.setState({ map });
+  }
 
+  setMarkers() {
+    // remove previous markers, if any
+    if (this.markers.length) {
+      //this.markers.forEach(marker => marker.setMap(null));
+      this.markers = [];
+      this.markerCluster.clearMarkers();
+    }
     // Create an array of alphabetical characters used to label the markers.
     var labels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-    const locations = this.props.filteredTweets.length
-      ? this.props.filteredTweets.map(tweet => ({
-          lat: tweet.coordinates.Latitude,
-          lng: tweet.coordinates.Longitude
-        }))
+    // Add some markers to the map.
+    this.markers = this.props.filteredTweets.length
+      ? this.props.filteredTweets.map((tweet, i) => {
+          const marker = new window.google.maps.Marker({
+            position: {
+              lat: tweet.coordinates.Latitude,
+              lng: tweet.coordinates.Longitude
+            },
+            label: labels[i % labels.length]
+          });
+          const infoWindow = new window.google.maps.InfoWindow({
+            content: `<div id="infoWindow${tweet.id_str}" />`
+          });
+          infoWindow.addListener("domready", e =>
+            render(
+              <InfoWindow tweet={tweet} />,
+              document.getElementById(`infoWindow${tweet.id_str}`)
+            )
+          );
+          marker.addListener("click", () => {
+            if (this.lastInfoWindow) this.lastInfoWindow.close();
+            this.lastInfoWindow = infoWindow;
+            infoWindow.open(this.map, marker);
+          });
+          return marker;
+        })
       : [];
 
-    // Add some markers to the map.
-    var markers = locations.map(function(location, i) {
-      return new window.google.maps.Marker({
-        position: location,
-        label: labels[i % labels.length]
+    // Add a marker clusterer to manage the markers, if it doesn't exist.
+    if (!this.markerCluster) {
+      this.markerCluster = new MarkerClusterer(this.state.map, this.markers, {
+        imagePath:
+          "https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m"
       });
-    });
-
-    // Add a marker clusterer to manage the markers.
-    var markerCluster = new MarkerClusterer(map, markers, {
-      imagePath:
-        "https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m"
-    });
+    } else {
+      this.markerCluster.addMarkers(this.markers);
+    }
   }
 
-  renderMap() {
+  componentDidMount() {
     if (!window.google) {
       var s = document.createElement("script");
       s.type = "text/javascript";
@@ -60,21 +101,17 @@ class Map extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    console.log("Map did update");
-    console.log(this.props.filteredTweets);
-    if (this.props.filteredTweets !== prevProps.filteredTweets) {
-      this.renderMap();
+    if (
+      this.state.filteredTweets !== prevProps.filteredTweets &&
+      window.google
+    ) {
+      this.setMarkers();
     }
-  }
-
-  componentDidMount() {
-    console.log("Map mounted");
-    this.renderMap();
   }
 
   render() {
     return (
-      <div style={{ height: "100vh", width: "100%" }} id={this.props.id} />
+      <div style={{ height: "100vh", width: "100%" }} id={this.state.id} />
     );
   }
 }

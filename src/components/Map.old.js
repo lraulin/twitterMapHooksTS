@@ -14,7 +14,14 @@ class Map extends Component {
       lat: 39.0997,
       lng: -94.5786
     },
-    zoom: 4
+    zoom: 4,
+    onMapLoad: map => {
+      var marker = new window.google.maps.Marker({
+        position: { lat: 41.0082, lng: 28.9784 },
+        map: map,
+        title: "Hello Istanbul!"
+      });
+    }
   };
 
   render() {
