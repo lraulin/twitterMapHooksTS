@@ -8,6 +8,7 @@ import axios from "axios";
 import incidentTypes from "../utilities/incidents";
 import _ from "lodash";
 import isTweet from "../utilities/isTweet";
+import firebase from "../firebase";
 
 // REST API url for mock database
 const JSON_SERVER_URL = "http://localhost:3001/posts";
@@ -15,12 +16,20 @@ const JSON_SERVER_URL = "http://localhost:3001/posts";
 class AppContainer extends Component {
   state = {
     tweets: {},
-    filteredTweets: []
+    filteredTweets: [],
+    filter: {
+      startDate: null,
+      endDate: null,
+      incidentTypes: null,
+      text: null
+    }
   };
 
   fetchTweets = this.fetchTweets.bind(this);
   applyFilter = this.applyFilter.bind(this);
   applyCategories = this.applyCategories.bind(this);
+  firebaseFetch = this.firebaseFetch.bind(this);
+  firebaseInit = this.firebaseInit.bind(this);
 
   fetchTweets(types) {
     // Get all Tweets asyncronously
@@ -161,8 +170,57 @@ class AppContainer extends Component {
     });
   }
 
+  firebaseInit() {
+    firebase
+      .auth()
+      .signInWithEmailAndPassword(
+        secrets.firebase.user,
+        secrets.firebase.password
+      )
+      .then(res => {
+        console.log("Firebase initialized!");
+        this.firebaseFetch();
+      })
+      .catch(error => {
+        if (error.code === "auth/user-not-found") {
+          console.log("Error logging in.");
+        }
+      });
+  }
+
+  firebaseFetch() {
+    console.log("Fetching from Firebase...");
+    const ref = firebase.database().ref("tweets");
+    // fetch data once if local cache (state.tweets) is empty,
+    // because the on value listener doesn't always fire immediately when
+    // page is reloaded
+    if (!this.state.tweets) {
+      ref.once("value").then(snapshot => {
+        console.log("On value event fired.");
+        console.log(snapshot);
+        const tweets = snapshot.val();
+        if (tweets) {
+          console.log("Retrieved tweets from Firebase!");
+          console.log(tweets);
+          this.setState({ tweets, filteredTweets: Object.values(tweets) });
+        }
+      });
+    }
+    // create listener to update state whenever database changes
+    ref.on("value", snapshot => {
+      console.log("On value event fired.");
+      console.log(snapshot);
+      const tweets = snapshot.val();
+      if (tweets) {
+        console.log("Retrieved tweets from Firebase!");
+        console.log(tweets);
+        this.setState({ tweets, filteredTweets: Object.values(tweets) });
+      }
+    });
+  }
+
   componentDidMount() {
-    this.loadData();
+    //this.loadData();
     let sqlStrs = [];
     Object.entries(incidentDictionary).forEach(([key, value]) => {
       const sql = [];
@@ -176,6 +234,7 @@ class AppContainer extends Component {
     });
     //const types = incidentTypes.map(incidentType => incidentType.id);
     //this.fetchTweets(types);
+    this.firebaseInit();
   }
 
   render() {
@@ -185,6 +244,7 @@ class AppContainer extends Component {
         filteredTweets={this.state.filteredTweets}
         fetchTweets={this.fetchTweets}
         applyFilter={this.applyFilter}
+        numTweets={_.size(this.state.tweets)}
       />
     );
   }

@@ -14,6 +14,7 @@ const App = ({
   filteredTweets,
   fetchTweets,
   applyFilter,
+  numTweets,
   ...props
 }) => {
   return (
@@ -21,7 +22,11 @@ const App = ({
       <div className="container-fluid" style={style}>
         <div className="row">
           <div className="col-sm-2">
-            <SearchPane fetchTweets={fetchTweets} applyFilter={applyFilter} />
+            <SearchPane
+              fetchTweets={fetchTweets}
+              applyFilter={applyFilter}
+              numTweets={numTweets}
+            />
           </div>
           <div className="col-sm-7">
             <Map filteredTweets={filteredTweets} />

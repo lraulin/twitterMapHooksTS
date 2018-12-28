@@ -178,6 +178,8 @@ class SearchPane extends React.Component {
         >
           Filter
         </button>
+        <br />
+        <p>Showing {this.props.numTweets} Tweets</p>
       </div>
     );
   }
