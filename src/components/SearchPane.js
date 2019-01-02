@@ -56,7 +56,7 @@ class SearchPane extends React.Component {
       text: this.state.searchText
     };
 
-    this.props.applyFilter(filterOptions);
+    this.props.setFilter(filterOptions);
   }
 
   handleClick(e) {
@@ -92,10 +92,13 @@ class SearchPane extends React.Component {
   }
 
   handleChangeDate([startDate, endDate]) {
-    this.setState({
-      startDate,
-      endDate
-    });
+    this.setState(
+      {
+        startDate,
+        endDate
+      },
+      this.filter
+    );
   }
 
   componentDidUpdate() {
@@ -150,27 +153,20 @@ class SearchPane extends React.Component {
         <strong>Filter by Date</strong>
         <Calendar
           handleChangeDate={this.handleChangeDate}
-          startDate={this.state.startDate}
-          endDate={this.state.endDate}
+          startDate={this.props.filter.startDate}
+          endDate={this.props.filter.endDate}
         />
         <br />
         <label htmlFor="text">
           <strong>Filter by Keywords</strong>
         </label>
         <input
-          type="text"
+          type="search"
           name="text"
-          value={this.state.searchText}
+          value={this.props.filter.text}
           onChange={e => this.setState({ searchText: e.target.value })}
         />
         <br />
-        <button
-          className="btn btn-primary"
-          name="search"
-          onClick={this.handleClick}
-        >
-          Search
-        </button>
         <button
           className="btn btn-primary"
           name="filter"

@@ -9,6 +9,7 @@ import incidentTypes from "../utilities/incidents";
 import _ from "lodash";
 import isTweet from "../utilities/isTweet";
 import firebase from "../firebase";
+import { fil } from "date-fns/esm/locale";
 
 // REST API url for mock database
 const JSON_SERVER_URL = "http://localhost:3001/posts";
@@ -21,12 +22,13 @@ class AppContainer extends Component {
       startDate: null,
       endDate: null,
       incidentTypes: null,
-      text: null
+      text: undefined
     }
   };
 
   fetchTweets = this.fetchTweets.bind(this);
   applyFilter = this.applyFilter.bind(this);
+  setFilter = this.setFilter.bind(this);
   applyCategories = this.applyCategories.bind(this);
   firebaseFetch = this.firebaseFetch.bind(this);
   firebaseInit = this.firebaseInit.bind(this);
@@ -65,9 +67,18 @@ class AppContainer extends Component {
         const tweets = {};
         res.forEach(tweet => (tweets[tweet.id_str] = tweet));
         this.saveData(tweets);
-        this.setState({ tweets });
+        this.setState({ tweets }, this.applyFilter);
       })
       .catch(e => console.log(e));
+  }
+
+  changeFilterText(text) {
+    this.setState(prevState => ({
+      filter: {
+        ...prevState.filter,
+        text
+      }
+    }));
   }
 
   searchTwitter(twitter, queryString) {
@@ -105,27 +116,49 @@ class AppContainer extends Component {
     }
   }
 
-  applyFilter({ incidentTypes, startDate, endDate, text }) {
+  setFilter(filter) {
+    this.setState({ filter }, this.applyFilter);
+  }
+
+  applyFilter() {
     let filteredTweets = Object.values(this.state.tweets);
     const initialCount = filteredTweets.length;
 
-    if (startDate) {
+    console.log("Applying filter...");
+
+    // remove retweets
+    let count = filteredTweets.length;
+    _.remove(filteredTweets, tweet => "retweeted_status" in tweet);
+    count -= filteredTweets.length;
+    console.log(`Filtered ${count} retweets`);
+
+    // remove tweets that outside selected date range
+    if (this.state.filter.startDate) {
       _.remove(
         filteredTweets,
         t =>
-          new Date(t.created_at) < startDate || new Date(t.created_at) > endDate
+          new Date(t.created_at) < this.state.filter.startDate ||
+          new Date(t.created_at) > this.state.filter.endDate
       );
     }
 
-    if (text) {
-      const words = text.split(" ");
+    // remove tweets without user-entered search words
+    if (this.state.filter.text) {
+      const words = this.state.filter.text.split(" ");
       _.remove(
         filteredTweets,
         tweet => !words.some(word => tweet.text.includes(word))
       );
     }
 
-    _.remove(filteredTweets, t => !incidentTypes.includes(t.incidentType));
+    // remove tweets that don't match selected incident types
+    if (this.state.filter.incidentTypes !== null) {
+      console.log("Removing by type...");
+      _.remove(
+        filteredTweets,
+        t => !this.state.filter.incidentTypes.includes(t.incidentType)
+      );
+    }
 
     const finalCount = filteredTweets.length;
     console.log(`${finalCount} of ${initialCount} Tweets match filter`);
@@ -202,7 +235,7 @@ class AppContainer extends Component {
         if (tweets) {
           console.log("Retrieved tweets from Firebase!");
           console.log(tweets);
-          this.setState({ tweets, filteredTweets: Object.values(tweets) });
+          this.setState({ tweets }, this.applyFilter);
         }
       });
     }
@@ -214,9 +247,19 @@ class AppContainer extends Component {
       if (tweets) {
         console.log("Retrieved tweets from Firebase!");
         console.log(tweets);
-        this.setState({ tweets, filteredTweets: Object.values(tweets) });
+        this.setState({ tweets }, this.applyFilter);
       }
     });
+  }
+
+  reset() {
+    const filter = {
+      startDate: null,
+      endDate: null,
+      incidentTypes: null,
+      text: null
+    };
+    this.setState({ filter });
   }
 
   componentDidMount() {
@@ -243,8 +286,9 @@ class AppContainer extends Component {
         tweets={this.state.tweets}
         filteredTweets={this.state.filteredTweets}
         fetchTweets={this.fetchTweets}
-        applyFilter={this.applyFilter}
+        setFilter={this.setFilter}
         numTweets={_.size(this.state.tweets)}
+        filter={this.state.filter}
       />
     );
   }

@@ -39,33 +39,37 @@ class Map extends Component {
       this.markers = [];
       this.markerCluster.clearMarkers();
     }
-    // Create an array of alphabetical characters used to label the markers.
-    var labels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     // Add some markers to the map.
+    // Ternary operator produces empty list if length is 0, otherwise array of
+    // markers.
     this.markers = this.props.filteredTweets.length
       ? this.props.filteredTweets.map((tweet, i) => {
-          const marker = new window.google.maps.Marker({
-            position: {
-              lat: tweet.coordinates.Latitude,
-              lng: tweet.coordinates.Longitude
-            },
-            label: labels[i % labels.length]
-          });
-          const infoWindow = new window.google.maps.InfoWindow({
-            content: `<div id="infoWindow${tweet.id_str}" />`
-          });
-          infoWindow.addListener("domready", e =>
-            render(
-              <InfoWindow tweet={tweet} />,
-              document.getElementById(`infoWindow${tweet.id_str}`)
-            )
-          );
-          marker.addListener("click", () => {
-            if (this.lastInfoWindow) this.lastInfoWindow.close();
-            this.lastInfoWindow = infoWindow;
-            infoWindow.open(this.map, marker);
-          });
+          let marker = null;
+          if ("coordinates" in tweet) {
+            marker = new window.google.maps.Marker({
+              position: {
+                lat: tweet.coordinates.Latitude,
+                lng: tweet.coordinates.Longitude
+              }
+            });
+            const infoWindow = new window.google.maps.InfoWindow({
+              content: `<div id="infoWindow${tweet.id_str}" />`
+            });
+            infoWindow.addListener("domready", e =>
+              render(
+                <InfoWindow tweet={tweet} />,
+                document.getElementById(`infoWindow${tweet.id_str}`)
+              )
+            );
+            marker.addListener("click", () => {
+              if (this.lastInfoWindow) this.lastInfoWindow.close();
+              this.lastInfoWindow = infoWindow;
+              infoWindow.open(this.map, marker);
+            });
+          } else {
+            console.log(`Tweet has no coordinates: ${JSON.stringify(tweet)}`);
+          }
           return marker;
         })
       : [];

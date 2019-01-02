@@ -13,8 +13,9 @@ const App = ({
   tweets,
   filteredTweets,
   fetchTweets,
-  applyFilter,
+  setFilter,
   numTweets,
+  filter,
   ...props
 }) => {
   return (
@@ -24,8 +25,9 @@ const App = ({
           <div className="col-sm-2">
             <SearchPane
               fetchTweets={fetchTweets}
-              applyFilter={applyFilter}
+              setFilter={setFilter}
               numTweets={numTweets}
+              filter={filter}
             />
           </div>
           <div className="col-sm-7">
@@ -45,7 +47,7 @@ App.propTypes = {
   fetchTweets: PropTypes.func,
   tweets: PropTypes.object, // Map
   filteredTweets: PropTypes.array,
-  applyFilter: PropTypes.func
+  setFilter: PropTypes.func
 };
 
 export default App;
