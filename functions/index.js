@@ -5,6 +5,10 @@ const secrets = require("./secrets.js");
 const Twitter = require("twitter");
 const _ = require("lodash");
 const axios = require("axios");
+const fs = require("fs");
+
+const searchString =
+  "fatal crash,fatal car crash,fatal car accident,pedestrian killed,fatal truck accident,fatal truck crash,truck kill,bus kill,cyclist killed,bicyclist killed,pedestrian crash,pedestrian killed,bicyclist crash,bicyclist killed,cyclist crash,cyclist killed,truck crash,truck kill,fatal truck crash,fatal truck accident,bus crash,bus kill,transit crash,transit crash,transit kill,rail suicide,transit suicide,pipeline explosion,pipeline spills,hazardous spill,hazardous spills,train explosion,train explode,bike lane blocked,bus lane blocked,road closed,road closure,road flooded,road washed,bridge closed,bridge out,ran red light,blew red light,blew through red light,drone unauthorized";
 
 const client = new Twitter({
   consumer_key: secrets.twitterConfig.consumerKey,
@@ -46,6 +50,7 @@ async function search_twitter(incident_type, search_string) {
   const filter_str = encodeURI(" " + filters.join(" "));
 
   const q = search_string.replace(" ", "") + filter_str;
+  console.log(q);
   let max_id_str = null;
   let results = null;
   let tweets = [];
@@ -53,7 +58,6 @@ async function search_twitter(incident_type, search_string) {
     try {
       results = await clientGet(client, q, max_id_str);
       if (!results.length) {
-        console.log(`${incident_type} search: No results`);
         break;
       }
       max_id_str = results.search_metadata.max_id_str;
@@ -66,12 +70,12 @@ async function search_twitter(incident_type, search_string) {
   }
   _.remove(tweets, tweet => tweet.user.verified !== true);
   _.remove(tweets, tweet => !!tweet.retweeted_status);
-  applyCategories(tweets);
+  categorizeAll(tweets);
   tweet_repo = tweet_repo.concat(tweets);
 }
 
 async function clientGet(client, q, max_id_str = null) {
-  let results = [];
+  let results = null;
   const options = { q, tweet_mode: "extended", lang: "en", count: 100 };
   if (max_id_str) options.max_id_str = max_id_str;
   try {
@@ -88,26 +92,70 @@ async function clientGet(client, q, max_id_str = null) {
   return results;
 }
 
-function applyCategories(tweets) {
+function categorizeAll(tweets) {
   tweets.forEach(tweet => {
     try {
       if (!Array.isArray(tweet.incidentType)) {
-        const types = [];
-        Object.keys(incidentTypes).forEach(typeKey => {
-          const re = incidentTypes[typeKey].regex;
-          if (tweet.text.match(re)) {
-            types.push(typeKey);
-          }
-        });
-        if (types) {
-          console.log(types);
-          tweet.incidentType = types;
-        }
+        categorize(tweet);
       }
     } catch (e) {
       console.log(e);
     }
   });
+}
+
+function categorize(tweet) {
+  if (!tweet.id_str) {
+    throw new TypeError("Not a Tweet!");
+  }
+  const types = [];
+  Object.keys(incidentTypes).forEach(typeKey => {
+    const re = incidentTypes[typeKey].regex;
+    if (tweet.text.match(re)) {
+      types.push(typeKey);
+    }
+  });
+  tweet.incidentType = types;
+  return tweet;
+}
+
+async function localize(tweet) {
+  if (!tweet.id_str) {
+    throw new TypeError("Not a Tweet!");
+  }
+
+  if (!tweet.coordinates) {
+    let location;
+    try {
+      location = tweet.user.location;
+    } catch (e) {
+      console.log(e);
+      throw new TypeError("Not a Tweet!");
+    }
+    tweet.coordinates = await getLatLong(location);
+  }
+  return tweet;
+}
+
+async function getLatLong(location) {
+  const location = encodeURIComponent(location);
+  const apiUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${location}&key=${
+    secrets.googleMapsApiKey
+  }`;
+  return axios
+    .get(apiUrl)
+    .then(res => {
+      const lat = res.data.results[0].geometry.location.lat;
+      const lng = res.data.results[0].geometry.location.lng;
+      return {
+        Latitude: lat,
+        Longitude: lng
+      };
+    })
+    .catch(e => {
+      console.log(e);
+      console.log("Unfound Location " + location);
+    });
 }
 
 function saveData(data) {
@@ -128,8 +176,47 @@ function saveData(data) {
   }
 }
 
-function main() {
-  search_all_types();
+async function processStream(data) {
+  if (data.id_str) {
+    if (data.user.verified === false) {
+      console.log("User not verified...discarding Tweet.");
+      return;
+    }
+    if (data.retweeted_status) {
+      console.log("Tweet is a retweet...discarding.");
+      //TODO: check if we have the original Tweet, and add it if not.
+      return;
+    }
+    categorize(data);
+    data = await localize(data);
+    fbSaveTweet(data);
+  }
 }
 
-main();
+function fbSaveTweet(tweet) {
+  // pass
+}
+
+function mainSearch() {
+  search_all_types();
+  console.log(`${tweet_repo.length} tweets found`);
+}
+
+function mainStream() {
+  var stream = client.stream("statuses/filter", { track: searchString });
+  stream.on("data", function(event) {
+    console.log(event && event.text);
+    writeToFile(
+      `\nUTS: ${Date.now()}\n${JSON.stringify(event)}`,
+      "tweetStream.json"
+    );
+  });
+}
+
+function writeToFile(text, file) {
+  const stream = fs.createWriteStream(file, { flags: "a" });
+  stream.write(text + "\n");
+  stream.end();
+}
+
+mainStream();
