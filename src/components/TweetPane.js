@@ -1,10 +1,7 @@
-import React, { Component } from "react";
+import React from "react";
 import Tweet from "./Tweet/Tweet";
 import { className } from "postcss-selector-parser";
 import ReactScrollbar from "react-scrollbar";
-import isTweet from "../utilities/isTweet";
-import _ from "lodash";
-import { filter } from "rsvp";
 
 const myScrollbar = {
   // width: 400,
@@ -14,7 +11,7 @@ const myScrollbar = {
 const TweetPane = ({ filteredTweets, ...props }) => {
   return (
     <ReactScrollbar style={myScrollbar}>
-      {!!filteredTweets.length &&
+      {filteredTweets &&
         filteredTweets
           .reverse()
           .map(tweet => (

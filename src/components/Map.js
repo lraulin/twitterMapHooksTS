@@ -43,7 +43,7 @@ class Map extends Component {
     // Add some markers to the map.
     // Ternary operator produces empty list if length is 0, otherwise array of
     // markers.
-    this.markers = this.props.filteredTweets.length
+    this.markers = this.props.filteredTweets
       ? this.props.filteredTweets.map((tweet, i) => {
           let marker = null;
           if ("coordinates" in tweet) {
@@ -67,8 +67,6 @@ class Map extends Component {
               this.lastInfoWindow = infoWindow;
               infoWindow.open(this.map, marker);
             });
-          } else {
-            console.log(`Tweet has no coordinates: ${JSON.stringify(tweet)}`);
           }
           return marker;
         })

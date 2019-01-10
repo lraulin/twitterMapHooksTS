@@ -2,16 +2,11 @@ import React from "react";
 import PropTypes from "prop-types";
 import Header from "./Header";
 import Text from "./Text";
-import Media from "./Media";
 import Footer from "./Footer";
 import styles from "./styles";
 import { cloneDeep } from "./utils";
 
 class Modal extends React.Component {
-  constructor(props, context) {
-    super(props, context);
-  }
-
   close() {
     this.context.closeModal();
   }
@@ -19,14 +14,11 @@ class Modal extends React.Component {
   render() {
     if (typeof window === "undefined") return null;
 
-    let { data, modalIndex } = this.props,
-      isRT = false;
-    let MediaComponent = null;
+    let { data, modalIndex } = this.props;
 
     // use retweet as data if its a RT
     if (data.retweeted_status) {
       data = data.retweeted_status;
-      isRT = true;
     }
 
     let media = data.entities.media[modalIndex];
@@ -144,7 +136,11 @@ class Modal extends React.Component {
           </div>
           <div className="tweet" style={tweetStyle}>
             <div className="media-wrap" style={imgWrapStyle}>
-              <img src={media.media_url} style={imgStyle} />
+              <img
+                src={media.media_url}
+                style={imgStyle}
+                alt={media.media_url}
+              />
             </div>
             <div className="content" style={contentStyle}>
               <Header data={data} />

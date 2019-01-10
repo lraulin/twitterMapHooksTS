@@ -5,19 +5,17 @@ import Twitter from "twitter-node-client";
 import secrets from "../secrets";
 import { incidentDictionary } from "../utilities/incidents";
 import axios from "axios";
-import incidentTypes from "../utilities/incidents";
 import _ from "lodash";
-import isTweet from "../utilities/isTweet";
 import firebase from "../firebase";
-import { fil } from "date-fns/esm/locale";
+import { isFirstDayOfMonth } from "date-fns/esm";
 
 // REST API url for mock database
 const JSON_SERVER_URL = "http://localhost:3001/posts";
 
 class AppContainer extends Component {
   state = {
-    tweets: {},
-    filteredTweets: [],
+    tweets: null,
+    filteredTweets: null,
     filter: {
       startDate: null,
       endDate: null,
@@ -32,6 +30,7 @@ class AppContainer extends Component {
   applyCategories = this.applyCategories.bind(this);
   firebaseFetch = this.firebaseFetch.bind(this);
   firebaseInit = this.firebaseInit.bind(this);
+  retry = this.retry.bind(this);
 
   fetchTweets(types) {
     // Get all Tweets asyncronously
@@ -121,48 +120,32 @@ class AppContainer extends Component {
   }
 
   applyFilter() {
-    let filteredTweets = Object.values(this.state.tweets);
-    const initialCount = filteredTweets.length;
+    const { startDate, endDate, incidentTypes, text } = this.state.filter;
+    let tweets = Object.values(this.state.tweets);
 
-    console.log("Applying filter...");
+    const notRetweet = t => !("retweeted_status" in t);
 
-    // remove retweets
-    let count = filteredTweets.length;
-    _.remove(filteredTweets, tweet => "retweeted_status" in tweet);
-    count -= filteredTweets.length;
-    console.log(`Filtered ${count} retweets`);
+    const inDateRange = t =>
+      new Date(t.created_at) >= startDate && new Date(t.created_at) <= endDate;
 
-    // remove tweets that outside selected date range
-    if (this.state.filter.startDate) {
-      _.remove(
-        filteredTweets,
-        t =>
-          new Date(t.created_at) < this.state.filter.startDate ||
-          new Date(t.created_at) > this.state.filter.endDate
-      );
-    }
+    const matchesText = tweet => text.some(word => tweet.text.includes(word));
 
-    // remove tweets without user-entered search words
-    if (this.state.filter.text) {
-      const words = this.state.filter.text.split(" ");
-      _.remove(
-        filteredTweets,
-        tweet => !words.some(word => tweet.text.includes(word))
-      );
-    }
+    const hasTypes = t => {
+      if (typeof t.incidentType === "string") {
+        return incidentTypes.includes(t.incidentType);
+      } else if (typeof t.incidentType === "object") {
+        // Tweet has an array of incident types; at least one must be selected
+        return t.incidentType.some(type => incidentTypes.includes(type));
+      }
+    };
 
-    // remove tweets that don't match selected incident types
-    if (this.state.filter.incidentTypes !== null) {
-      console.log("Removing by type...");
-      _.remove(
-        filteredTweets,
-        t => !this.state.filter.incidentTypes.includes(t.incidentType)
-      );
-    }
+    // Apply filters if applicable.
+    tweets = tweets.filter(notRetweet);
+    tweets = startDate && endDate ? tweets.filter(inDateRange) : tweets;
+    tweets = text ? tweets.filter(matchesText) : tweets;
+    tweets = incidentTypes ? tweets.filter(hasTypes) : tweets;
 
-    const finalCount = filteredTweets.length;
-    console.log(`${finalCount} of ${initialCount} Tweets match filter`);
-    this.setState({ filteredTweets });
+    this.setState({ filteredTweets: tweets });
   }
 
   applyCategories(tweets) {
@@ -229,24 +212,21 @@ class AppContainer extends Component {
     // page is reloaded
     if (!this.state.tweets) {
       ref.once("value").then(snapshot => {
-        console.log("On value event fired.");
-        console.log(snapshot);
         const tweets = snapshot.val();
         if (tweets) {
-          console.log("Retrieved tweets from Firebase!");
-          console.log(tweets);
           this.setState({ tweets }, this.applyFilter);
+        } else {
+          console.log("firebaseFetch: Something went wrong...no tweets...");
         }
       });
     }
+    // make sure we're not creating duplicate listeners
+    ref.off();
     // create listener to update state whenever database changes
     ref.on("value", snapshot => {
-      console.log("On value event fired.");
-      console.log(snapshot);
       const tweets = snapshot.val();
       if (tweets) {
         console.log("Retrieved tweets from Firebase!");
-        console.log(tweets);
         this.setState({ tweets }, this.applyFilter);
       }
     });
@@ -262,22 +242,17 @@ class AppContainer extends Component {
     this.setState({ filter });
   }
 
+  retry() {
+    // If we don't have Tweets, retry every 2 seconds until we do.
+    if (!this.state.tweets) {
+      this.firebaseInit();
+      setTimeout(() => this.retry(), 2000);
+    }
+  }
+
   componentDidMount() {
-    //this.loadData();
-    let sqlStrs = [];
-    Object.entries(incidentDictionary).forEach(([key, value]) => {
-      const sql = [];
-      sql.push(key);
-      sql.push(value.displayName);
-      sql.push(value.searchString);
-      sql.push(value.crisisType);
-      sql.push(value.regex);
-      let sqlStr = `("` + sql.join(`", "`) + `")`;
-      sqlStrs.push(sqlStr);
-    });
-    //const types = incidentTypes.map(incidentType => incidentType.id);
-    //this.fetchTweets(types);
     this.firebaseInit();
+    setTimeout(() => this.retry(), 2000);
   }
 
   render() {

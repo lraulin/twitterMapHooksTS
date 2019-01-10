@@ -3,8 +3,6 @@ import Map from "./Map";
 import SearchPane from "./SearchPane";
 import TweetPane from "./TweetPane";
 import PropTypes from "prop-types";
-import { fil } from "date-fns/esm/locale";
-import { height } from "window-size";
 
 const style = {
   // display: "block"
@@ -26,7 +24,7 @@ const App = ({
           <div className="col-sm-2" style={{ height: "100vh" }}>
             <a
               style={{ width: "100%" }}
-              class="btn btn-dark"
+              className="btn btn-dark"
               data-toggle="collapse"
               href="#collapseExample"
               role="button"
@@ -35,8 +33,8 @@ const App = ({
             >
               Filter Settings
             </a>
-            <div class="collapse show" id="collapseExample">
-              <div class="card card-body" style={{ height: "100%" }}>
+            <div className="collapse show" id="collapseExample">
+              <div className="card card-body" style={{ height: "100%" }}>
                 <SearchPane
                   fetchTweets={fetchTweets}
                   setFilter={setFilter}

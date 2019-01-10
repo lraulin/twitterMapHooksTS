@@ -137,18 +137,17 @@ class SearchPane extends React.Component {
         </button>
         <br />
         {incidentTypes.map(item => (
-          <>
-            <label key={"label_" + item.id}>
+          <React.Fragment key={item.id}>
+            <label>
               <Checkbox
                 name={item.id}
-                key={"checkbox_" + item.id}
                 checked={this.state.checkedItems.get(item.id)}
                 onChange={this.handleCheckboxChange}
               />
               {item.displayName}
             </label>
-            <br key={"br_" + item.id} />
-          </>
+            <br />
+          </React.Fragment>
         ))}
         <strong>Filter by Date</strong>
         <Calendar
