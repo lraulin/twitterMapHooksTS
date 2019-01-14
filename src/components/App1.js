@@ -10,8 +10,6 @@ import SearchPane from "./SearchPane";
 import TweetPane from "./TweetPane";
 import Map from "./Map.old";
 
-const map = createIncidentMap();
-
 // REST API url for mock database
 const JSON_SERVER_URL = "http://localhost:3001/posts";
 
@@ -29,6 +27,7 @@ const isEmpty = x => {
 
 const AppContainer = () => {
   const [mounted, setMounted] = useState(false);
+  const [map, setMap] = useState(null);
   const [filteredTweets, setFilteredTweets] = useState(null);
   const [filter, setFilter] = useState({
     text: "",
@@ -71,11 +70,8 @@ const AppContainer = () => {
     applyFilter(filter, getLocal());
   };
 
-  const applyFilter = (opts, allTweets = []) => {
-    console.log(`Tweets: ${allTweets}`);
-    console.log(`Map: ${map}`);
+  const applyFilter = (opts, allTweets) => {
     if (!allTweets || !map) return;
-    console.log("applying filter...");
     const { startDate, endDate, incidentTypes, text } = opts;
     const selectedTypes = Object.keys(incidentTypes).filter(
       key => incidentTypes[key]
@@ -104,7 +100,7 @@ const AppContainer = () => {
     tweetList = text ? tweetList.filter(matchesText) : tweetList;
     tweetList = incidentTypes ? tweetList.filter(hasTypes) : tweetList;
 
-    map.updateMarkers(tweetList);
+    // map.updateMarkers(tweetList);
   };
 
   const firebaseInit = async () => {
@@ -182,23 +178,22 @@ const AppContainer = () => {
     }
   };
 
-  const initMap = async () => {
-    map.initMap();
-
-    const tweets = getLocal();
-    if (tweets) {
-      applyFilter(filter, tweets);
-    }
-    firebaseInit();
-  };
-
   // ComponentDidMount
   useEffect(() => {
     if (!mounted) {
-      initMap();
+      firebaseInit();
+
+      // const map = createIncidentMap();
+      // map.initMap();
+      // setMap(map);
+
+      const tweets = getLocal();
+      if (tweets) {
+        applyFilter(filter, tweets);
+      }
     }
     setMounted(true);
-  }, []);
+  });
 
   return (
     <div className="App">
@@ -228,8 +223,8 @@ const AppContainer = () => {
             </div>
           </div>
           <div className="col-sm-7" style={{ height: "100vh" }}>
-            {/* <Map /> */}
-            <div style={{ height: "100vh", width: "100%" }} id="myMap" />;
+            {/* <div style={{ height: "100vh", width: "100%" }} id="myMap" /> */}
+            <Map filteredTweets={filteredTweets} />
           </div>
         </div>
         <div className="col-sm-3 d-none d-lg-block" style={{ height: "100vh" }}>
