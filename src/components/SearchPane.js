@@ -1,126 +1,51 @@
-import React from "react";
-import Checkbox from "./Checkbox";
+import React, { useState, useEffect } from "react";
 import incidentTypes from "../utilities/incidents";
 import Calendar from "./Calendar";
+import Checkbox from "./Checkbox";
 
 const containerStyle = {
   textAlign: "left"
   // height: "100%"
 };
 
-class SearchPane extends React.Component {
-  state = {
-    allSelected: false,
-    checkedItems: new Map(),
-    startDate: null,
-    endDate: null,
-    searchText: ""
+const SearchPane = ({
+  setFilter,
+  toggleCheckBox,
+  filter,
+  changeFilterText
+}) => {
+  const [mounted, setMounted] = useState(false);
+  const selectAll = bool => {
+    //
   };
 
-  handleCheckboxChange = this.handleCheckboxChange.bind(this);
-  search = this.search.bind(this);
-  filter = this.filter.bind(this);
-  handleChangeDate = this.handleChangeDate.bind(this);
-  handleClick = this.handleClick.bind(this);
-
-  selectAll(bool) {
-    // Check or uncheck all checkboxes
-    const checkedItems = this.state.checkedItems;
-    Array.from(checkedItems.keys()).forEach(key => checkedItems.set(key, bool));
-    this.setState(checkedItems, this.filter);
-  }
-
-  search() {
-    // Get selected incident types as array of strings
-    const selectedTypes = [
-      ...new Map(
-        [...this.state.checkedItems].filter(([key, value]) => value === true)
-      ).keys()
-    ];
-    // search for tweets with Twitter API
-    this.props.fetchTweets(selectedTypes);
-  }
-
-  filter() {
-    // Collect selected options from UI and call function to apply filter
-    const incidentTypes = [
-      ...new Map(
-        [...this.state.checkedItems].filter(([key, value]) => value === true)
-      ).keys()
-    ];
-
-    const filterOptions = {
-      incidentTypes,
-      startDate: this.state.startDate,
-      endDate: this.state.endDate,
-      text: this.state.searchText
-    };
-
-    this.props.setFilter(filterOptions);
-  }
-
-  handleClick(e) {
-    console.log(e);
+  const handleClick = e => {
+    console.log(e.target);
     switch (e.target.name) {
       case "selectAll":
-        this.selectAll(true);
+        selectAll(true);
         break;
       case "selectNone":
-        this.selectAll(false);
+        selectAll(false);
         break;
       case "filter":
-        this.filter();
-        break;
-      case "search":
-        this.search();
+        filter();
         break;
       default:
         throw new Error(`No handler for click event ${e.target.name}`);
     }
-  }
+  };
 
-  handleCheckboxChange(e) {
-    // Toggle the value for the checkbox
-    const item = e.target.name;
-    const isChecked = e.target.checked;
-    this.setState(
-      prevState => ({
-        checkedItems: prevState.checkedItems.set(item, isChecked)
-      }),
-      this.filter
-    );
-  }
+  const handleChangeDate = ([startDate, endDate]) => {
+    filter.startDate = startDate;
+    filter.endDate = endDate;
+    setFilter(filter);
+  };
 
-  handleChangeDate([startDate, endDate]) {
-    this.setState(
-      {
-        startDate,
-        endDate
-      },
-      this.filter
-    );
-  }
-
-  componentDidUpdate() {
-    // Make "All" checked if user checked all manually
-    const selectionValues = [...this.state.checkedItems.values()];
-    if (!this.state.allSelected && selectionValues.every(x => x === true)) {
-      this.setState({ allSelected: true });
-    }
-  }
-
-  componentDidMount() {
-    // initialize the list of selections
-    const checkedItems = new Map();
-    incidentTypes.forEach(type => checkedItems.set(type.id, true));
-    this.setState({ checkedItems });
-  }
-
-  render() {
-    return (
-      <div style={containerStyle}>
-        <strong>Incident Type</strong>
-        <br />
+  return (
+    <div style={containerStyle}>
+      <strong>Incident Type</strong>
+      {/* <br />
         <button
           className="btn btn-primary btn-sm"
           name="selectNone"
@@ -131,53 +56,48 @@ class SearchPane extends React.Component {
         <button
           className="btn btn-primary btn-sm"
           name="selectAll"
-          onClick={this.handleClick}
+          onClick={this.props.checkAll(true)}
         >
           All
-        </button>
-        <br />
-        {incidentTypes.map(item => (
-          <React.Fragment key={item.id}>
-            <label>
-              <Checkbox
-                name={item.id}
-                checked={this.state.checkedItems.get(item.id)}
-                onChange={this.handleCheckboxChange}
-              />
-              {item.displayName}
-            </label>
-            <br />
-          </React.Fragment>
-        ))}
-        <strong>Filter by Date</strong>
-        <Calendar
-          handleChangeDate={this.handleChangeDate}
-          startDate={this.props.filter.startDate}
-          endDate={this.props.filter.endDate}
-        />
-        <br />
-        <label htmlFor="text">
-          <strong>Filter by Keywords</strong>
-        </label>
-        <input
-          type="search"
-          name="text"
-          value={this.props.filter.text}
-          onChange={e => this.setState({ searchText: e.target.value })}
-        />
-        <br />
-        <button
-          className="btn btn-primary"
-          name="filter"
-          onClick={this.handleClick}
-        >
-          Filter
-        </button>
-        <br />
-        <p>Showing {this.props.numTweets} Tweets</p>
-      </div>
-    );
-  }
-}
+        </button> */}
+      <br />
+      {incidentTypes.map(item => (
+        <React.Fragment key={item.id}>
+          <label>
+            <Checkbox
+              type="checkbox"
+              name={item.id}
+              checked={filter.incidentTypes[item.id]}
+              toggleCheckBox={toggleCheckBox}
+            />
+            {item.displayName}
+          </label>
+          <br />
+        </React.Fragment>
+      ))}
+      <strong>Filter by Date</strong>
+      <Calendar
+        handleChangeDate={handleChangeDate}
+        startDate={filter.startDate}
+        endDate={filter.endDate}
+      />
+      <br />
+      <label htmlFor="text">
+        <strong>Filter by Keywords</strong>
+      </label>
+      <input
+        type="search"
+        name="text"
+        value={filter.text}
+        onChange={e => changeFilterText(e.target.value)}
+      />
+      <br />
+      <button className="btn btn-primary" name="filter" onClick={handleClick}>
+        Filter
+      </button>
+      <br />
+    </div>
+  );
+};
 
 export default SearchPane;
