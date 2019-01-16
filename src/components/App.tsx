@@ -1,19 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "../styles/App.css";
 import secrets from "../secrets";
-import { incidentDictionary } from "../utilities/incidents";
-import axios from "axios";
 import _ from "lodash";
 import firebase from "../firebase";
 import createIncidentMap from "../incident_map";
 import SearchPane from "./SearchPane";
 import TweetPane from "./TweetPane";
-import Map from "./Map.old";
-
-const map = createIncidentMap();
-
-// REST API url for mock database
-const JSON_SERVER_URL = "http://localhost:3001/posts";
 
 const isEmpty = x => {
   if (!x) {
@@ -27,7 +19,9 @@ const isEmpty = x => {
   }
 };
 
-const AppContainer = () => {
+function AppContainer() {
+  const mapRef = useRef(createIncidentMap());
+  const JSON_SERVER_URL = "http://localhost:3001/posts";
   const [mounted, setMounted] = useState(false);
   const [filteredTweets, setFilteredTweets] = useState(null);
   const [filter, setFilter] = useState({
@@ -73,14 +67,13 @@ const AppContainer = () => {
 
   const applyFilter = (opts, allTweets = []) => {
     console.log(`Tweets: ${allTweets}`);
-    console.log(`Map: ${map}`);
-    if (!allTweets || !map) return;
+    if (!allTweets) return;
     console.log("applying filter...");
     const { startDate, endDate, incidentTypes, text } = opts;
     const selectedTypes = Object.keys(incidentTypes).filter(
       key => incidentTypes[key]
     );
-    let tweetList = Object.values(allTweets);
+    let tweetList = allTweets;
 
     // Filters
     const notRetweet = t => !("retweeted_status" in t);
@@ -104,7 +97,7 @@ const AppContainer = () => {
     tweetList = text ? tweetList.filter(matchesText) : tweetList;
     tweetList = incidentTypes ? tweetList.filter(hasTypes) : tweetList;
 
-    map.updateMarkers(tweetList);
+    mapRef.current.updateMarkers(tweetList);
   };
 
   const firebaseInit = async () => {
@@ -183,7 +176,7 @@ const AppContainer = () => {
   };
 
   const initMap = async () => {
-    map.initMap();
+    mapRef.current.initMap();
 
     const tweets = getLocal();
     if (tweets) {
@@ -238,6 +231,6 @@ const AppContainer = () => {
       </div>
     </div>
   );
-};
+}
 
 export default AppContainer;

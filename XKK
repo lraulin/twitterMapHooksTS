@@ -1,0 +1,6 @@
+{
+  "compilerOptions": {
+    "forceConsistentCasingInFileNames": false,
+    "lib": ["es2018", "dom"]
+  }
+}
