@@ -3,11 +3,13 @@ import "../styles/App.css";
 import secrets from "../secrets";
 import _ from "lodash";
 import firebase from "../firebase";
-import createIncidentMap from "../incident_map";
+import createIncidentMap from "../utilities/incident_map";
 import SearchPane from "./SearchPane";
 import TweetPane from "./TweetPane";
+import { TweetHashMap } from "../utilities/types";
+import { Status as Tweet, User } from "../types/twitter-d";
 
-const isEmpty = x => {
+const isEmpty = (x: Object) => {
   if (!x) {
     return true;
   } else if (Array.isArray(x) && x.length === 0) {
@@ -18,6 +20,17 @@ const isEmpty = x => {
     return false;
   }
 };
+
+interface IncidentTypeChecked {
+  [key: string]: boolean;
+}
+
+interface FilterOptions {
+  text: string;
+  startDate: Date | null;
+  endDate: Date | null;
+  incidentTypes: IncidentTypeChecked;
+}
 
 function AppContainer() {
   const mapRef = useRef(createIncidentMap());
@@ -42,30 +55,30 @@ function AppContainer() {
       road: true,
       unsafe: true,
       drone: true
-    }
-  });
+    } as IncidentTypeChecked
+  } as FilterOptions);
 
-  const saveLocal = tweets => {
+  const saveLocal = (tweets: TweetHashMap) => {
     localStorage.setItem("tweets", JSON.stringify(tweets));
   };
 
   const getLocal = () => {
-    return JSON.parse(localStorage.getItem("tweets"));
+    return JSON.parse(localStorage.getItem("tweets") || "");
   };
 
-  const changeFilterText = text => {
+  const changeFilterText = (text = "") => {
     console.log(text);
     filter.text = text;
     setFilter(filter);
   };
 
-  const toggleCheckBox = name => {
+  const toggleCheckBox = (name = "") => {
     filter.incidentTypes[name] = !filter.incidentTypes[name];
     setFilter(filter);
     applyFilter(filter, getLocal());
   };
 
-  const applyFilter = (opts, allTweets = []) => {
+  const applyFilter = (opts: FilterOptions, allTweets: Tweet[] = []) => {
     console.log(`Tweets: ${allTweets}`);
     if (!allTweets) return;
     console.log("applying filter...");
@@ -76,15 +89,21 @@ function AppContainer() {
     let tweetList = allTweets;
 
     // Filters
-    const notRetweet = t => !("retweeted_status" in t);
-    const inDateRange = t =>
-      new Date(t.created_at) >= startDate && new Date(t.created_at) <= endDate;
-    const matchesText = tweet =>
+    const notRetweet = (t: Tweet) => !("retweeted_status" in t);
+    const inDateRange = (t: Tweet) => {
+      if (startDate && endDate) {
+        new Date(t.created_at) >= startDate &&
+          new Date(t.created_at) <= endDate;
+      } else {
+        true;
+      }
+    };
+    const matchesText = (tweet: Tweet) =>
       text.split(" ").some(word => tweet.text.includes(word));
-    const hasTypes = t => {
+    const hasTypes = (t: Tweet) => {
       if (typeof t.incidentType === "string") {
         return selectedTypes.includes(t.incidentType);
-      } else if (typeof t.incidentType === "object") {
+      } else if (Array.isArray(t.incidentType)) {
         // Tweet has an array of incident types; at least one must be selected
         return t.incidentType.some(type => selectedTypes.includes(type));
       }
@@ -145,7 +164,7 @@ function AppContainer() {
     ref.off();
     // create listener to update state whenever database changes
     ref.on("value", snapshot => {
-      const fetchedTweets = snapshot.val();
+      const fetchedTweets = snapshot ? snapshot.val() : null;
       if (fetchedTweets) {
         console.log("Retrieved tweets from Firebase!");
         saveLocal(fetchedTweets);
@@ -157,11 +176,11 @@ function AppContainer() {
   const reset = () => {
     const incidentTypes = filter.incidentTypes;
     Object.keys(incidentTypes).forEach(key => (incidentTypes[key] = false));
-    const resetFilter = {
+    const resetFilter: FilterOptions = {
       startDate: null,
       endDate: null,
       incidentTypes,
-      text: null
+      text: ""
     };
     setFilter(resetFilter);
     applyFilter(resetFilter);

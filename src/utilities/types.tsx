@@ -1,6 +1,6 @@
 import { Status as Tweet } from "twitter-d";
 
-export interface TweetHash {
+export interface TweetHashMap {
   [key: string]: Tweet;
 }
 
@@ -13,7 +13,7 @@ export interface MapOptions {
 }
 
 export interface IncidentMap {
-  tweets: TweetHash;
+  tweets: TweetHashMap;
   onScriptLoad(): void;
   initMap(): void;
   updateMarkers(tweets: Array<Tweet>): void;
