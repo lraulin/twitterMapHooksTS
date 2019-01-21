@@ -1,14 +1,13 @@
 import React from "react";
 import Tweet from "react-tweet";
 import { className } from "postcss-selector-parser";
-import PropTypes from "prop-types";
+import { Status } from "../types/twitter-d";
 
-const InfoWindow = ({ tweet, ...props }) => {
-  if (!("entities" in tweet)) {
-    tweet.entities = { urls: [] };
-  } else if (!("urls" in tweet.entities)) {
-    tweet.entities.urls = [];
-  }
+type Props = {
+  tweet: Status;
+};
+
+const InfoWindow = ({ tweet, ...props }: Props) => {
   return (
     <Tweet
       className={className}
@@ -17,10 +16,6 @@ const InfoWindow = ({ tweet, ...props }) => {
       key={tweet.id_str}
     />
   );
-};
-
-InfoWindow.propTypes = {
-  tweet: PropTypes.object
 };
 
 export default InfoWindow;

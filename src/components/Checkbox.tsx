@@ -1,28 +1,22 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import PropTypes from "prop-types";
 
-const Checkbox = ({
-  type = "checkbox",
-  name = "",
-  checked = false,
-  toggleCheckBox
-}) => {
+type Props = {
+  name: string;
+  checked: boolean;
+  toggleCheckBox: (name: string) => void;
+};
+
+const Checkbox = ({ name, checked, toggleCheckBox }: Props) => {
   return (
     <input
-      type={type}
+      type={"checkbox"}
       name={name}
       checked={checked}
       onChange={() => toggleCheckBox(name)}
       key={"input_" + name}
     />
   );
-};
-
-Checkbox.propTypes = {
-  type: PropTypes.string,
-  name: PropTypes.string.isRequired,
-  checked: PropTypes.bool,
-  toggleCheckBox: PropTypes.func.isRequired
 };
 
 export default Checkbox;

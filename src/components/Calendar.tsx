@@ -2,10 +2,16 @@ import React from "react";
 import DateRangePicker from "@wojtekmaj/react-daterange-picker";
 import PropTypes from "prop-types";
 
-const Calendar = ({ handleChangeDate, startDate, endDate, ...props }) => (
+type Props = {
+  startDate: Date;
+  endDate: Date;
+  handleChangeDate: ([startDate, endDate]: [Date | null, Date | null]) => void;
+};
+
+const Calendar = ({ handleChangeDate, startDate, endDate }: Props) => (
   <>
     <DateRangePicker
-      onChange={date => {
+      onChange={(date: [Date, Date]) => {
         if (date) return handleChangeDate(date);
         else handleChangeDate([null, null]);
       }}

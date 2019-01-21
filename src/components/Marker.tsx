@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import styled from "styled-components";
+import styled, { ThemedStyledProps } from "styled-components";
 
 const Wrapper = styled.div`
   position: absolute;
@@ -19,20 +19,13 @@ const Wrapper = styled.div`
   }
 `;
 
+///@ts-ignore
 const Marker = props => (
+  ///@ts-ignore
   <Wrapper
     alt={props.text}
     {...(props.onClick ? { onClick: props.onClick } : {})}
   />
 );
-
-Marker.defaultProps = {
-  onClick: null
-};
-
-Marker.propTypes = {
-  onClick: PropTypes.func,
-  text: PropTypes.string.isRequired
-};
 
 export default Marker;

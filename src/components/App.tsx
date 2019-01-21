@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import * as React from "react";
+import { useEffect, useRef, useState } from "react";
 import "../styles/App.css";
 import secrets from "../secrets";
 import _ from "lodash";
@@ -7,7 +8,9 @@ import createIncidentMap from "../utilities/incident_map";
 import SearchPane from "./SearchPane";
 import TweetPane from "./TweetPane";
 import { TweetHashMap } from "../utilities/types";
-import { Status as Tweet, User } from "../types/twitter-d";
+import { Status as Tweet } from "../types/twitter-d";
+import { IncidentTypeChecked, FilterOptions } from "../types/mytypes";
+import { compose, filter, into, takeLast, uniqBy } from "ramda";
 
 const isEmpty = (x: Object) => {
   if (!x) {
@@ -21,23 +24,11 @@ const isEmpty = (x: Object) => {
   }
 };
 
-interface IncidentTypeChecked {
-  [key: string]: boolean;
-}
-
-interface FilterOptions {
-  text: string;
-  startDate: Date | null;
-  endDate: Date | null;
-  incidentTypes: IncidentTypeChecked;
-}
-
-function AppContainer() {
+const AppContainer = () => {
   const mapRef = useRef(createIncidentMap());
   const JSON_SERVER_URL = "http://localhost:3001/posts";
-  const [mounted, setMounted] = useState(false);
-  const [filteredTweets, setFilteredTweets] = useState(null);
-  const [filter, setFilter] = useState({
+  const [filteredTweets, setFilteredTweets] = useState<Tweet[]>([]);
+  const [filterOptions, setFilterOptions] = useState({
     text: "",
     startDate: null,
     endDate: null,
@@ -66,57 +57,86 @@ function AppContainer() {
     return JSON.parse(localStorage.getItem("tweets") || "");
   };
 
-  const changeFilterText = (text = "") => {
-    console.log(text);
-    filter.text = text;
-    setFilter(filter);
+  const changeFilterSettings = (settings: FilterOptions) => {
+    setFilterOptions(settings);
+    applyFilter(settings);
   };
 
   const toggleCheckBox = (name = "") => {
-    filter.incidentTypes[name] = !filter.incidentTypes[name];
-    setFilter(filter);
-    applyFilter(filter, getLocal());
+    filterOptions.incidentTypes[name] = !filterOptions.incidentTypes[name];
+    setFilterOptions(filterOptions);
+    applyFilter({ tweets: getLocal(), ...filterOptions });
   };
 
-  const applyFilter = (opts: FilterOptions, allTweets: Tweet[] = []) => {
-    console.log(`Tweets: ${allTweets}`);
-    if (!allTweets) return;
-    console.log("applying filter...");
-    const { startDate, endDate, incidentTypes, text } = opts;
+  const applyFilter = ({
+    text = filterOptions.text,
+    startDate = filterOptions.startDate,
+    endDate = filterOptions.endDate,
+    incidentTypes = filterOptions.incidentTypes,
+    tweets = getLocal() || {}
+  }) => {
+    if (tweets === {} || !mapRef.current) {
+      console.log("No tweets or map");
+      return;
+    }
+    saveLocal(tweets);
     const selectedTypes = Object.keys(incidentTypes).filter(
       key => incidentTypes[key]
     );
-    let tweetList = allTweets;
+    const tweetList = Object.values(tweets);
+    console.log(`filtering ${tweetList.length} tweets`);
 
     // Filters
-    const notRetweet = (t: Tweet) => !("retweeted_status" in t);
-    const inDateRange = (t: Tweet) => {
+    const notRetweet = (tweet: Tweet) => !tweet.retweeted_status;
+    const inDateRange = (tweet: Tweet) => {
       if (startDate && endDate) {
-        new Date(t.created_at) >= startDate &&
-          new Date(t.created_at) <= endDate;
+        return (
+          new Date(tweet.created_at) >= startDate &&
+          new Date(tweet.created_at) <= endDate
+        );
       } else {
-        true;
+        return true;
       }
     };
-    const matchesText = (tweet: Tweet) =>
-      text.split(" ").some(word => tweet.text.includes(word));
-    const hasTypes = (t: Tweet) => {
-      if (typeof t.incidentType === "string") {
-        return selectedTypes.includes(t.incidentType);
-      } else if (Array.isArray(t.incidentType)) {
-        // Tweet has an array of incident types; at least one must be selected
-        return t.incidentType.some(type => selectedTypes.includes(type));
+    const matchesText = (tweet: Tweet) => {
+      if (text !== "") {
+        return text
+          .toLowerCase()
+          .split(" ")
+          .some((word: string) => tweet.text.toLowerCase().includes(word));
+      } else {
+        return true;
+      }
+    };
+    const hasTypes = (tweet: Tweet) => {
+      if (typeof tweet.incidentType === "string") {
+        return selectedTypes.includes(tweet.incidentType);
+      } else if (Array.isArray(tweet.incidentType)) {
+        return tweet.incidentType.some(type => selectedTypes.includes(type));
+      } else {
+        return false;
       }
     };
 
     // Apply filters if applicable.
-    tweetList = tweetList.filter(notRetweet);
-    tweetList =
-      startDate && endDate ? tweetList.filter(inDateRange) : tweetList;
-    tweetList = text ? tweetList.filter(matchesText) : tweetList;
-    tweetList = incidentTypes ? tweetList.filter(hasTypes) : tweetList;
+    const tweetFilter = compose(
+      filter(notRetweet),
+      filter(inDateRange),
+      filter(matchesText),
+      filter(hasTypes)
+    );
 
-    mapRef.current.updateMarkers(tweetList);
+    // Dedup
+    const justText = (text: string) => text.slice(0, text.indexOf(" http"));
+    const dedupedTweets = uniqBy(
+      (tweet: Tweet) => justText(tweet.text),
+      // @ts-ignore
+      into([] as Tweet[], tweetFilter, tweetList)
+    );
+
+    const top7 = takeLast(7, dedupedTweets);
+    setFilteredTweets(top7 as React.SetStateAction<Tweet[]>);
+    mapRef.current.updateMarkers(filteredTweets);
   };
 
   const firebaseInit = async () => {
@@ -151,7 +171,7 @@ function AppContainer() {
           const fetchedTweets = snapshot.val();
           if (fetchedTweets) {
             saveLocal(fetchedTweets);
-            applyFilter(filter, fetchedTweets);
+            applyFilter({ tweets: fetchedTweets, ...filterOptions });
           } else {
             console.log("firebaseFetch: Something went wrong...no tweets...");
           }
@@ -168,13 +188,13 @@ function AppContainer() {
       if (fetchedTweets) {
         console.log("Retrieved tweets from Firebase!");
         saveLocal(fetchedTweets);
-        applyFilter(filter, fetchedTweets);
+        applyFilter({ tweets: fetchedTweets, ...filteredTweets });
       }
     });
   };
 
   const reset = () => {
-    const incidentTypes = filter.incidentTypes;
+    const incidentTypes = filterOptions.incidentTypes;
     Object.keys(incidentTypes).forEach(key => (incidentTypes[key] = false));
     const resetFilter: FilterOptions = {
       startDate: null,
@@ -182,7 +202,7 @@ function AppContainer() {
       incidentTypes,
       text: ""
     };
-    setFilter(resetFilter);
+    setFilterOptions(resetFilter);
     applyFilter(resetFilter);
   };
 
@@ -199,17 +219,14 @@ function AppContainer() {
 
     const tweets = getLocal();
     if (tweets) {
-      applyFilter(filter, tweets);
+      applyFilter({ tweets, ...filterOptions });
     }
     firebaseInit();
   };
 
   // ComponentDidMount
   useEffect(() => {
-    if (!mounted) {
-      initMap();
-    }
-    setMounted(true);
+    initMap();
   }, []);
 
   return (
@@ -231,10 +248,9 @@ function AppContainer() {
             <div className="collapse show" id="collapseExample">
               <div className="card card-body" style={{ height: "100%" }}>
                 <SearchPane
-                  setFilter={setFilter}
-                  filter={filter}
+                  setFilter={setFilterOptions}
+                  filter={filterOptions}
                   toggleCheckBox={toggleCheckBox}
-                  changeFilterText={changeFilterText}
                 />
               </div>
             </div>
@@ -250,6 +266,6 @@ function AppContainer() {
       </div>
     </div>
   );
-}
+};
 
 export default AppContainer;

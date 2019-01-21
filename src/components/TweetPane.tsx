@@ -1,20 +1,20 @@
 import React from "react";
-import Tweet from "./Tweet/Tweet";
+import Tweet from "react-tweet";
 import { className } from "postcss-selector-parser";
 import ReactScrollbar from "react-scrollbar";
+import { Status } from "../types/twitter-d";
 
-const myScrollbar = {
-  // width: 400,
-  height: 850
+type Props = {
+  filteredTweets: Status[];
 };
 
-const TweetPane = ({ filteredTweets, ...props }) => {
+const TweetPane = ({ filteredTweets }: Props) => {
   return (
-    <ReactScrollbar style={myScrollbar}>
+    <ReactScrollbar style={{ height: 850 }}>
       {filteredTweets &&
         filteredTweets
           .reverse()
-          .map(tweet => (
+          .map((tweet: Status) => (
             <Tweet
               className={className}
               data={tweet}
