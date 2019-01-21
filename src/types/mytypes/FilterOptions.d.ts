@@ -1,6 +1,4 @@
-import { IncidentTypeChecked } from "./IncidentTypeChecked";
-
-export interface FilterOptions {
+declare interface FilterOptions {
   text: string;
   startDate: Date | null;
   endDate: Date | null;

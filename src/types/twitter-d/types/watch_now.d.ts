@@ -1,3 +1,3 @@
-export interface WatchNow {
+declare interface WatchNow {
   url: string;
 }

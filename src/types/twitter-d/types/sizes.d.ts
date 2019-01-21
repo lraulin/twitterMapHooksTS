@@ -1,6 +1,4 @@
-import { Size } from './size';
-
-export interface Sizes {
+declare interface Sizes {
   large: Size;
   medium: Size;
   small: Size;

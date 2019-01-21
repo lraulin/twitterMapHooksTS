@@ -1,4 +1,4 @@
-export interface BoundingBox {
+declare interface BoundingBox {
   coordinates?: [number, number][][] | null;
   type: string;
 }

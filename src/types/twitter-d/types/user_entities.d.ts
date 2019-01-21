@@ -1,7 +1,4 @@
-import { UserDescriptionEntity } from './user_description_entity';
-import { UserUrlEntity } from './user_url_entity';
-
-export interface UserEntities {
+declare interface UserEntities {
   description: UserDescriptionEntity;
   url?: UserUrlEntity | null;
 }

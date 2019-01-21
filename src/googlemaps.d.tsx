@@ -1,2 +1,2 @@
+///@ts-ignore
 declare module "googlemaps";
-//declare module "@google/markerclusterer";

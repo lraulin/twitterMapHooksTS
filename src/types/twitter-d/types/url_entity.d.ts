@@ -1,4 +1,4 @@
-export interface UrlEntity {
+declare interface UrlEntity {
   display_url?: string;
   expanded_url?: string;
   indices?: [number, number] | null;

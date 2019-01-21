@@ -1,7 +1,4 @@
-import { Status } from './status';
-import { UserEntities } from './user_entities';
-
-export interface User {
+declare interface User {
   contributors_enabled: boolean;
   created_at: string;
   default_profile_image: boolean;

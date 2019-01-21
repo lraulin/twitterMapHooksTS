@@ -1,7 +1,4 @@
-import { Attributes } from './attributes';
-import { BoundingBox } from './bounding_box';
-
-export interface Place {
+declare interface Place {
   attributes: Attributes;
   bounding_box: BoundingBox;
   contained_within?: string[] | null;

@@ -1,4 +1,21 @@
-const createIncidentType = (id, displayName, searchString, crisisType) => ({
+declare interface IncidentType {
+  id: string;
+  displayName: string;
+  searchString: string;
+  crisisType: string;
+  regex: RegExp;
+}
+
+declare interface IncidentDictionary {
+  [key: string]: IncidentType;
+}
+
+const createIncidentType = (
+  id: string,
+  displayName: string,
+  searchString: string,
+  crisisType: string
+) => ({
   id,
   displayName,
   searchString,
@@ -6,7 +23,7 @@ const createIncidentType = (id, displayName, searchString, crisisType) => ({
   regex: reify(searchString)
 });
 
-function reify(str) {
+function reify(str: string) {
   str = str
     .toLowerCase()
     .replace(/%26 |\(|\)/g, "")
@@ -104,7 +121,7 @@ const incidentTypes = [
   )
 ];
 
-export const incidentDictionary = {};
-incidentTypes.forEach(x => (incidentDictionary[x.id] = x));
+export const incidentDictionary: IncidentDictionary = {};
+incidentTypes.forEach((x: IncidentType) => (incidentDictionary[x.id] = x));
 
 export default incidentTypes;

@@ -1,12 +1,4 @@
-import { Coordinates } from "./coordinates";
-import { Entities } from "./entities";
-import { ExtendedEntities } from "./extended_entities";
-import { Place } from "./place";
-import { QuotedStatusPermalink } from "./quoted_status_permalink";
-import { Scope } from "./scope";
-import { User } from "./user";
-
-export interface Status {
+declare interface Status {
   contributors?: null;
   coordinates?: Coordinates | null;
   created_at: string;

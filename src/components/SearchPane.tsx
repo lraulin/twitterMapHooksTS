@@ -2,7 +2,6 @@ import * as React from "react";
 import incidentTypes from "../utilities/incidents";
 import Calendar from "./Calendar";
 import Checkbox from "./Checkbox";
-import { IncidentTypeChecked, FilterOptions } from "../types/mytypes";
 
 type Props = {
   filter: FilterOptions;
@@ -23,6 +22,7 @@ const SearchPane = ({ filter, setFilter, toggleCheckBox }: Props) => {
   return (
     <div style={{ textAlign: "left" }}>
       <strong>Incident Type</strong>
+      <br />
       {incidentTypes.map(item => (
         <React.Fragment key={item.id}>
           <label>

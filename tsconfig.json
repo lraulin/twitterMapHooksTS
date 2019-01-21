@@ -10,10 +10,10 @@
     "module": "esnext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "isolatedModules": false,
+    "isolatedModules": true,
     "noEmit": true,
     "jsx": "preserve",
-    "lib": ["es2017", "dom"]
+    "lib": ["dom", "dom.iterable", "esnext"]
   },
   "include": ["src"]
 }

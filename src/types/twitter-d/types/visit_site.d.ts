@@ -1,3 +1,3 @@
-export interface VisitSite {
+declare interface VisitSite {
   url: string;
 }

@@ -1,4 +1,4 @@
-export interface UserMentionEntity {
+declare interface UserMentionEntity {
   id_str: string;
   id: number;
   indices?: number[] | null;

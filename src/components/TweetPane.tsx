@@ -2,7 +2,6 @@ import React from "react";
 import Tweet from "react-tweet";
 import { className } from "postcss-selector-parser";
 import ReactScrollbar from "react-scrollbar";
-import { Status } from "../types/twitter-d";
 
 type Props = {
   filteredTweets: Status[];

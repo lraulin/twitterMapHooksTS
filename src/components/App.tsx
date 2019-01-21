@@ -8,8 +8,6 @@ import createIncidentMap from "../utilities/incident_map";
 import SearchPane from "./SearchPane";
 import TweetPane from "./TweetPane";
 import { TweetHashMap } from "../utilities/types";
-import { Status as Tweet } from "../types/twitter-d";
-import { IncidentTypeChecked, FilterOptions } from "../types/mytypes";
 import { compose, filter, into, takeLast, uniqBy } from "ramda";
 
 const isEmpty = (x: Object) => {
@@ -27,7 +25,7 @@ const isEmpty = (x: Object) => {
 const AppContainer = () => {
   const mapRef = useRef(createIncidentMap());
   const JSON_SERVER_URL = "http://localhost:3001/posts";
-  const [filteredTweets, setFilteredTweets] = useState<Tweet[]>([]);
+  const [filteredTweets, setFilteredTweets] = useState<Status[]>([]);
   const [filterOptions, setFilterOptions] = useState({
     text: "",
     startDate: null,
@@ -84,11 +82,11 @@ const AppContainer = () => {
       key => incidentTypes[key]
     );
     const tweetList = Object.values(tweets);
-    console.log(`filtering ${tweetList.length} tweets`);
+    const initialCount = tweetList.length;
 
     // Filters
-    const notRetweet = (tweet: Tweet) => !tweet.retweeted_status;
-    const inDateRange = (tweet: Tweet) => {
+    const notRetweet = (tweet: Status) => !tweet.retweeted_status;
+    const inDateRange = (tweet: Status) => {
       if (startDate && endDate) {
         return (
           new Date(tweet.created_at) >= startDate &&
@@ -98,7 +96,7 @@ const AppContainer = () => {
         return true;
       }
     };
-    const matchesText = (tweet: Tweet) => {
+    const matchesText = (tweet: Status) => {
       if (text !== "") {
         return text
           .toLowerCase()
@@ -108,11 +106,13 @@ const AppContainer = () => {
         return true;
       }
     };
-    const hasTypes = (tweet: Tweet) => {
+    const hasTypes = (tweet: Status) => {
       if (typeof tweet.incidentType === "string") {
         return selectedTypes.includes(tweet.incidentType);
       } else if (Array.isArray(tweet.incidentType)) {
-        return tweet.incidentType.some(type => selectedTypes.includes(type));
+        return tweet.incidentType.some((type: string) =>
+          selectedTypes.includes(type)
+        );
       } else {
         return false;
       }
@@ -128,15 +128,18 @@ const AppContainer = () => {
 
     // Dedup
     const justText = (text: string) => text.slice(0, text.indexOf(" http"));
-    const dedupedTweets = uniqBy(
-      (tweet: Tweet) => justText(tweet.text),
+    const finalTweets = uniqBy(
+      (tweet: Status) => justText(tweet.text),
       // @ts-ignore
       into([] as Tweet[], tweetFilter, tweetList)
     );
 
-    const top7 = takeLast(7, dedupedTweets);
-    setFilteredTweets(top7 as React.SetStateAction<Tweet[]>);
-    mapRef.current.updateMarkers(filteredTweets);
+    const top7 = takeLast(7, finalTweets);
+    setFilteredTweets(top7 as React.SetStateAction<Status[]>);
+
+    const finalCount = finalTweets.length;
+    console.log(`showing ${finalCount} of ${initialCount}`);
+    mapRef.current.updateMarkers(finalTweets);
   };
 
   const firebaseInit = async () => {
@@ -255,13 +258,18 @@ const AppContainer = () => {
               </div>
             </div>
           </div>
-          <div className="col-sm-7" style={{ height: "100vh" }}>
-            {/* <Map /> */}
-            <div style={{ height: "100vh", width: "100%" }} id="myMap" />;
+          {/* [[[[[ MAP ]]]]] */}
+          <div
+            className="col-sm-7"
+            style={{ height: "100vh", width: "100%" }}
+            id="myMap"
+          />
+          <div
+            className="col-sm-3 d-none d-lg-block"
+            style={{ height: "100vh" }}
+          >
+            <TweetPane filteredTweets={filteredTweets} />
           </div>
-        </div>
-        <div className="col-sm-3 d-none d-lg-block" style={{ height: "100vh" }}>
-          <TweetPane filteredTweets={filteredTweets} />
         </div>
       </div>
     </div>

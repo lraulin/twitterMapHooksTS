@@ -1,4 +1,4 @@
-export interface Scope {
+declare interface Scope {
   followers: boolean;
   place_ids?: string[] | null;
 }

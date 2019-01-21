@@ -1,5 +1,3 @@
-import { MediaEntity } from './media_entity';
-
-export interface ExtendedEntities {
+declare interface ExtendedEntities {
   media?: MediaEntity[] | null;
 }

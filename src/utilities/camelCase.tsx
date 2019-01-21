@@ -1,4 +1,4 @@
-export default function camelCase(str) {
+export default function camelCase(str: string) {
   str = str.toLowerCase();
   const words = str.split(" ");
   for (let i = 1; i < words.length; i++) {

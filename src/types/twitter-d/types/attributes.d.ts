@@ -1,1 +1,1 @@
-export interface Attributes {}
+declare interface Attributes {}

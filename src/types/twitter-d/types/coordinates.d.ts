@@ -1,4 +1,4 @@
-export interface Coordinates {
-  coordinates?: [number, number] | null;
-  type: string;
+declare interface Coordinates {
+  Latitude: number;
+  Longitude: number;
 }
